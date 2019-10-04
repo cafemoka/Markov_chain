@@ -7,7 +7,7 @@ We need 'graph_generation.m' and 'cnm' toolbox that used in the last class.
 Download: cnm toolbox for the generation of artificial complex networks 
 made by Gregorio Alanis-Lobato [here](https://se.mathworks.com/matlabcentral/fileexchange/45734-cnm)  
 
-We will plot random walkers that move 10 times on an artificial complex network from a node with the largest number of edges. 
+We plot random walkers that move 10 times on an artificial complex network from a node with the largest number of edges. 
 
 Here we use five artificial complex networks:  
 - Regular network (RE)  
@@ -95,3 +95,125 @@ for j = 1:5,
 end
 ``` 
 
+![most_node_Markovchain10steps](https://user-images.githubusercontent.com/54297018/66201430-5124b880-e6de-11e9-888e-84a6a08bb491.png)
+
+
+We plot random walkers that move 10 times on an artificial complex network from a node with the smallest number of edges. 
+
+```Matlab 
+% The random walker moves 10 times from the node with the smallest number of edges.
+figure; 
+% Color of nodes 
+color_list = colormap(hot(120)); 
+color_list = color_list(end-20:-1:1,:); 
+for j = 1:5,
+    if j == 1,
+        A = RE;
+    elseif j == 2,
+        A = SW;
+    elseif j == 3,
+        A = RA;
+    elseif j == 4,
+        A = SF;
+    else
+        A = HY;
+    end
+
+    % Construct a graph for plot
+    [row,col] = find(A); % find the index of nodes of connected edges (row,col)  
+    tind = find(row < col); % because A is a symmetric matrix 
+    row = row(tind); col = col(tind); 
+    G = graph(row,col); 
+
+    % Estimate transition matrix 
+    P = A./repmat(sum(A,1),[p 1]); 
+    
+    % Estimate the degree of nodes 
+    degree = sum(A); 
+    
+    % Choose a node with the largest number of edges 
+    [min_degree,ind_node] = min(degree); 
+    
+    % initial state 
+    x = zeros(p,1); 
+    x(ind_node) = 1; 
+
+    for i = 1:10, 
+        % Determine the size of nodes 
+        node_size = max(ceil(x/max(x)*7),1);
+        % Determine  the color of nodes 
+        node_color = color_list(max(ceil(x/max(x)*100),1),:); 
+        
+        subplot(5,10,(j-1)*10+i), 
+        h = plot(G,'Layout','force','MarkerSize',node_size,'NodeColor',node_color); 
+        layout(h,'force','UseGravity',true,'Iterations',1000); 
+        labelnode(h,1:p,'')
+        if i == 5, 
+            xlabel(network_name{j});
+        end
+        if j == 1, 
+            title(['Step ' num2str(i-1)]);
+        end
+        set(gca,'FontSize',14); 
+        
+        % Estimate the next state 
+        x = P*x; 
+    end 
+end
+```
+
+![least_node_Markovchain10steps](https://user-images.githubusercontent.com/54297018/66201500-774a5880-e6de-11e9-822a-39c67e11ae0c.png)
+
+We plot the stationary distribution. 
+
+```Matlab 
+% Plot stationary distribution 
+eps = 10^(-9); 
+
+figure; 
+% Color of nodes 
+color_list = colormap(hot(120)); 
+color_list = color_list(end-20:-1:1,:); 
+for j = 1:5,
+    if j == 1,
+        A = RE;
+    elseif j == 2,
+        A = SW;
+    elseif j == 3,
+        A = RA;
+    elseif j == 4,
+        A = SF;
+    else
+        A = HY;
+    end
+    
+    % Estimate transition matrix 
+    P = A./repmat(sum(A,1),[p 1]); 
+    
+    % x = Px 
+    [U,S,V] = svd(eye(p)-P); 
+    ind_x = find(diag(S) < eps);
+    % stationary distribution 
+    x = abs(V(:,ind_x)); 
+    
+    % Construct a graph 
+    [row,col] = find(A); % find the index of nodes of connected edges (row,col)  
+    tind = find(row < col); % because A is a symmetric matrix 
+    row = row(tind); col = col(tind); 
+    G = graph(row,col); 
+
+    % Determine the size of nodes 
+    node_size = max(ceil(x/max(x)*7),1);
+    % Determine  the color of nodes 
+    node_color = color_list(max(ceil(x/max(x)*100),1),:); 
+        
+    subplot(1,5,j),
+    h = plot(G,'Layout','force','MarkerSize',node_size,'NodeColor',node_color); 
+    layout(h,'force','UseGravity',true,'Iterations',1000); 
+    labelnode(h,1:p,'')
+    xlabel(network_name{j});
+    set(gca,'FontSize',14); 
+end 
+``` 
+
+![stationary_Markovchain](https://user-images.githubusercontent.com/54297018/66201625-bed0e480-e6de-11e9-9aeb-e30c6ad9bc98.png)
